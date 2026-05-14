@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Threat Detection AI - SOC Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #020617;
+            color: white;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+
+        .sidebar {
+
+            width: 260px;
+            background: #0f172a;
+            border-right: 1px solid #1e293b;
+
+            padding: 25px;
+
+            position: fixed;
+
+            top: 0;
+            left: 0;
+            bottom: 0;
+        }
+
+        .logo {
+
+            font-size: 24px;
+            font-weight: bold;
+
+            margin-bottom: 40px;
+
+            color: #38bdf8;
+        }
+
+        .menu {
+
+            list-style: none;
+        }
+
+        .menu li {
+
+            margin-bottom: 15px;
+        }
+
+        .menu a {
+
+            display: block;
+
+            padding: 14px;
+
+            border-radius: 10px;
+
+            text-decoration: none;
+
+            color: #cbd5e1;
+
+            transition: 0.3s;
+        }
+
+        .menu a:hover {
+
+            background: #1e293b;
+
+            color: #38bdf8;
+        }
+
+        /* =========================
+           MAIN
+        ========================= */
+
+        .main {
+
+            margin-left: 260px;
+
+            width: calc(100% - 260px);
+
+            padding: 30px;
+        }
+
+        .topbar {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 30px;
+
+            gap: 20px;
+        }
+
+        .topbar-left h1 {
+
+            font-size: 32px;
+        }
+
+        .topbar-left p {
+
+            color: #94a3b8;
+
+            margin-top: 5px;
+        }
+
+        .topbar-right {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+        }
+
+        .status {
+
+            background: #14532d;
+
+            color: #bbf7d0;
+
+            padding: 10px 20px;
+
+            border-radius: 10px;
+
+            font-weight: bold;
+        }
+
+        .export-btn {
+
+            background: linear-gradient(
+                135deg,
+                #2563eb,
+                #1d4ed8
+            );
+
+            color: white;
+
+            text-decoration: none;
+
+            padding: 12px 18px;
+
+            border-radius: 10px;
+
+            font-weight: bold;
+
+            transition: 0.3s;
+        }
+
+        .export-btn:hover {
+
+            transform: scale(1.05);
+
+            box-shadow:
+                0 0 20px rgba(37,99,235,0.5);
+        }
+
+        /* =========================
+           CARDS
+        ========================= */
+
+        .cards {
+
+            display: grid;
+
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+
+            gap: 20px;
+
+            margin-bottom: 30px;
+        }
+
+        .card {
+
+            background: #0f172a;
+
+            border: 1px solid #1e293b;
+
+            border-radius: 15px;
+
+            padding: 20px;
+
+            transition: 0.3s;
+        }
+
+        .card:hover {
+
+            transform: translateY(-4px);
+
+            border-color: #38bdf8;
+
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+        }
+
+        .card h2 {
+
+            font-size: 16px;
+
+            color: #94a3b8;
+
+            margin-bottom: 10px;
+        }
+
+        .card p {
+
+            font-size: 30px;
+
+            font-weight: bold;
+        }
+
+        /* =========================
+           CHARTS
+        ========================= */
+
+        .charts {
+
+            display: grid;
+
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+
+            gap: 20px;
+
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+
+            background: #0f172a;
+
+            border: 1px solid #1e293b;
+
+            border-radius: 15px;
+
+            padding: 20px;
+        }
+
+        .chart-container h2 {
+
+            margin-bottom: 20px;
+
+            color: #cbd5e1;
+        }
+
+        /* =========================
+           LOGS
+        ========================= */
+
+        .logs-container {
+
+            background: #0f172a;
+
+            border: 1px solid #1e293b;
+
+            border-radius: 15px;
+
+            padding: 20px;
+        }
+
+        .logs-container h2 {
+
+            margin-bottom: 10px;
+        }
+
+        .logs-container p {
+
+            color: #94a3b8;
+
+            margin-bottom: 20px;
+        }
+
+        table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+        th {
+
+            background: #1e293b;
+
+            color: #e2e8f0;
+
+            padding: 14px;
+
+            text-align: left;
+        }
+
+        td {
+
+            padding: 14px;
+
+            border-bottom: 1px solid #1e293b;
+
+            font-size: 14px;
+        }
+
+        tr:hover {
+
+            background: rgba(255,255,255,0.03);
+        }
+
+        .alert-row {
+
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .benign-row {
+
+            background: rgba(34, 197, 94, 0.03);
+        }
+
+        .badge {
+
+            padding: 6px 12px;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            font-weight: bold;
+        }
+
+        .badge-benign {
+
+            background: #14532d;
+
+            color: #bbf7d0;
+        }
+
+        .badge-alert {
+
+            background: #7f1d1d;
+
+            color: #fecaca;
+        }
+
+        .severity-low {
+
+            color: #22c55e;
+
+            font-weight: bold;
+        }
+
+        .severity-medium {
+
+            color: #facc15;
+
+            font-weight: bold;
+        }
+
+        .severity-high {
+
+            color: #ef4444;
+
+            font-weight: bold;
+        }
+
+        /* =========================
+           RESPONSIVO
+        ========================= */
+
+        @media(max-width: 900px) {
+
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+
+                position: relative;
+
+                width: 100%;
+
+                height: auto;
+            }
+
+            .main {
+
+                margin-left: 0;
+
+                width: 100%;
+            }
+
+            .topbar {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+
+    <div class="sidebar">
+
+        <div class="logo">
+            Threat AI
+        </div>
+
+        <ul class="menu">
+
+            <li><a href="#dashboard">Dashboard</a></li>
+
+            <li><a href="#charts">Threat Analytics</a></li>
+
+            <li><a href="#timeline">Timeline</a></li>
+
+            <li><a href="#logs">Threat Logs</a></li>
+
+        </ul>
+
+    </div>
+
+    <!-- MAIN -->
+
+    <div class="main">
+
+        <!-- TOPBAR -->
+
+        <div class="topbar" id="dashboard">
+
+            <div class="topbar-left">
+
+                <h1>SOC Monitoring Dashboard</h1>
+
+                <p>AI Cyber Threat Detection Platform</p>
+
+            </div>
+
+            <div class="topbar-right">
+
+                <a
+                    href="http://127.0.0.1:8000/export/csv"
+                    target="_blank"
+                    class="export-btn"
+                >
+                    Export CSV
+                </a>
+
+                <div class="status">
+                    IA ONLINE
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- CARDS -->
+
+        <div class="cards">
+
+            <div class="card">
+
+                <h2>Total de Logs</h2>
+
+                <p id="totalLogs">0</p>
+
+            </div>
+
+            <div class="card">
+
+                <h2>Alertas Detectados</h2>
+
+                <p id="totalAlerts">0</p>
+
+            </div>
+
+            <div class="card">
+
+                <h2>Último IP Suspeito</h2>
+
+                <p id="lastIp">---</p>
+
+            </div>
+
+            <div class="card">
+
+                <h2>Maior Risk Score</h2>
+
+                <p id="riskScore">0</p>
+
+            </div>
+
+        </div>
+
+        <!-- CHARTS -->
+
+        <div class="charts" id="charts">
+
+            <div class="chart-container">
+
+                <h2>Pacotes Benignos x Alertas</h2>
+
+                <canvas id="predictionChart"></canvas>
+
+            </div>
+
+            <div class="chart-container">
+
+                <h2>Tipos de Ataques</h2>
+
+                <canvas id="alertChart"></canvas>
+
+            </div>
+
+            <div class="chart-container" id="timeline">
+
+                <h2>Alertas ao Longo do Tempo</h2>
+
+                <canvas id="timelineChart"></canvas>
+
+            </div>
+
+        </div>
+
+        <!-- LOGS -->
+
+        <div class="logs-container" id="logs">
+
+            <h2>Threat Logs</h2>
+
+            <p>Atualização automática via SQLite</p>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Horário</th>
+                        <th>Origem</th>
+                        <th>Destino</th>
+                        <th>Predição</th>
+                        <th>Severidade</th>
+                        <th>Risk Score</th>
+                        <th>Alertas</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="logsTable"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+<script>
+
+    const apiUrl = "http://127.0.0.1:8000/logs";
+
+    let predictionChart;
+    let alertChart;
+    let timelineChart;
+
+    let displayedLogs = new Set();
+
+    let timelineLabels = [];
+    let timelineData = [];
+
+    function createCharts() {
+
+        // =========================
+        // CHART 1
+        // =========================
+
+        predictionChart = new Chart(
+
+            document.getElementById("predictionChart"),
+
+            {
+                type: "doughnut",
+
+                data: {
+
+                    labels: ["Benignos", "Alertas"],
+
+                    datasets: [{
+                        data: [0, 0]
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+                    animation: false
+                }
+            }
+        );
+
+        // =========================
+        // CHART 2
+        // =========================
+
+        alertChart = new Chart(
+
+            document.getElementById("alertChart"),
+
+            {
+                type: "bar",
+
+                data: {
+
+                    labels: [
+                        "SYN Flood",
+                        "Port Scan",
+                        "Brute Force",
+                        "DDoS",
+                        "DNS",
+                        "Beaconing",
+                        "Exfiltration"
+                    ],
+
+                    datasets: [{
+                        label: "Quantidade",
+                        data: [0,0,0,0,0,0,0]
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+                    animation: false
+                }
+            }
+        );
+
+        // =========================
+        // CHART 3
+        // =========================
+
+        timelineChart = new Chart(
+
+            document.getElementById("timelineChart"),
+
+            {
+                type: "line",
+
+                data: {
+
+                    labels: timelineLabels,
+
+                    datasets: [{
+                        label: "Alertas",
+                        data: timelineData
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+                    animation: false
+                }
+            }
+        );
+    }
+
+    async function loadLogs() {
+
+        try {
+
+            const response = await fetch(apiUrl);
+
+            const data = await response.json();
+
+            const logs = data.logs || [];
+
+            const table = document.getElementById("logsTable");
+
+            let benignTotal = 0;
+            let alertTotal = 0;
+
+            let synFlood = 0;
+            let portScan = 0;
+            let bruteForce = 0;
+            let ddos = 0;
+            let dns = 0;
+            let beacon = 0;
+            let exfil = 0;
+
+            let maxRisk = 0;
+
+            logs.forEach(log => {
+
+                const logKey = JSON.stringify(log);
+
+                const hasAlert =
+                    log.alerts !== "NONE";
+
+                // CONTADORES
+
+                if (hasAlert) {
+                    alertTotal++;
+                } else {
+                    benignTotal++;
+                }
+
+                // ATAQUES
+
+                if (log.alerts.includes("SYN")) synFlood++;
+
+                if (log.alerts.includes("PORT")) portScan++;
+
+                if (log.alerts.includes("BRUTE")) bruteForce++;
+
+                if (log.alerts.includes("DDOS")) ddos++;
+
+                if (log.alerts.includes("DNS")) dns++;
+
+                if (log.alerts.includes("BEACON")) beacon++;
+
+                if (log.alerts.includes("EXFIL")) exfil++;
+
+                // RISK SCORE
+
+                if (log.risk_score > maxRisk) {
+                    maxRisk = log.risk_score;
+                }
+
+                // TIMELINE
+
+                if (hasAlert) {
+
+                    timelineLabels.push(log.timestamp);
+
+                    timelineData.push(log.risk_score);
+
+                    if (timelineLabels.length > 15) {
+
+                        timelineLabels.shift();
+                        timelineData.shift();
+                    }
+                }
+
+                // EVITA DUPLICAÇÃO
+
+                if (displayedLogs.has(logKey)) {
+                    return;
+                }
+
+                displayedLogs.add(logKey);
+
+                // LINHA
+
+                const row = document.createElement("tr");
+
+                row.classList.add(
+                    hasAlert ? "alert-row" : "benign-row"
+                );
+
+                let severityClass = "severity-low";
+
+                if (log.severity === "MEDIUM") {
+                    severityClass = "severity-medium";
+                }
+
+                if (log.severity === "HIGH") {
+                    severityClass = "severity-high";
+                }
+
+                row.innerHTML = `
+                    <td>${log.timestamp}</td>
+
+                    <td>${log.src_ip}</td>
+
+                    <td>${log.dst_ip}</td>
+
+                    <td>
+                        <span class="badge ${hasAlert ? 'badge-alert' : 'badge-benign'}">
+                            ${log.prediction}
+                        </span>
+                    </td>
+
+                    <td class="${severityClass}">
+                        ${log.severity}
+                    </td>
+
+                    <td>
+                        ${log.risk_score}
+                    </td>
+
+                    <td>
+                        ${log.alerts}
+                    </td>
+                `;
+
+                table.prepend(row);
+
+            });
+
+            // =========================
+            // CARDS
+            // =========================
+
+            document.getElementById("totalLogs").innerText =
+                logs.length;
+
+            document.getElementById("totalAlerts").innerText =
+                alertTotal;
+
+            document.getElementById("riskScore").innerText =
+                maxRisk;
+
+            // ÚLTIMO IP
+
+            const suspicious =
+                logs.find(log => log.alerts !== "NONE");
+
+            if (suspicious) {
+
+                document.getElementById("lastIp").innerText =
+                    suspicious.src_ip;
+            }
+
+            // =========================
+            // CHARTS
+            // =========================
+
+            predictionChart.data.datasets[0].data = [
+                benignTotal,
+                alertTotal
+            ];
+
+            predictionChart.update("none");
+
+            alertChart.data.datasets[0].data = [
+                synFlood,
+                portScan,
+                bruteForce,
+                ddos,
+                dns,
+                beacon,
+                exfil
+            ];
+
+            alertChart.update("none");
+
+            timelineChart.update("none");
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    }
+
+    createCharts();
+
+    loadLogs();
+
+    setInterval(loadLogs, 5000);
+
+</script>
+
+</body>
+</html>
